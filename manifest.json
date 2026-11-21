@@ -1,0 +1,19 @@
+{
+  "name": "Autopilot Loop OS 6.0",
+  "short_name": "Loop OS",
+  "description": "Streaks + Viva Health — Offline-First",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F8FB",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
