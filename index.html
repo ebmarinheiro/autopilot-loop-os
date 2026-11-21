@@ -1,24 +1,52 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0b0d10" />
+  <meta name="theme-color" content="#ffffff" />
   <title>Autopilot Loop OS v9</title>
   <style>
+    /* TEMA CLARO (PADRÃO - ALTO CONTRASTE) */
     :root {
-      --bg: #0b0d10;
-      --surface: #14181f;
-      --surface-2: #1c222c;
-      --border: #27303f;
-      --text: #f3f5f8;
-      --muted: #93a0b4;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface-2: #e2e8f0;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #1d4ed8;
+      --accent-text: #ffffff;
+      --ok: #15803d;
+      --ok-bg: #dcfce7;
+      --ok-border: #86efac;
+      --warn: #b45309;
+      --warn-bg: #fef3c7;
+      --warn-border: #fcd34d;
+      --danger: #b91c1c;
+      --danger-bg: #fee2e2;
+      --danger-border: #fca5a5;
+      --radius: 12px;
+    }
+
+    /* TEMA ESCURO (ALTO CONTRASTE) */
+    :root[data-theme="dark"] {
+      --bg: #090d14;
+      --surface: #131a26;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
       --accent: #3b82f6;
-      --accent-soft: rgba(59, 130, 246, 0.14);
-      --ok: #22c55e;
-      --warn: #f59e0b;
-      --danger: #ef4444;
-      --radius: 14px;
+      --accent-text: #ffffff;
+      --ok: #4ade80;
+      --ok-bg: rgba(34, 197, 94, 0.16);
+      --ok-border: rgba(74, 222, 128, 0.45);
+      --warn: #fbbf24;
+      --warn-bg: rgba(245, 158, 11, 0.16);
+      --warn-border: rgba(251, 191, 36, 0.45);
+      --danger: #fca5a5;
+      --danger-bg: rgba(239, 68, 68, 0.18);
+      --danger-border: rgba(248, 113, 113, 0.5);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -30,28 +58,61 @@
       min-height: 100vh;
     }
 
+    /* LOGIN GATE */
+    .auth-gate {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px 16px;
+    }
+    .auth-card {
+      width: 100%; max-width: 400px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    }
+    .auth-title {
+      font-size: 18px; font-weight: 800; letter-spacing: 0.02em;
+      text-transform: uppercase; margin: 0 0 4px;
+    }
+    .auth-sub {
+      font-size: 13px; color: var(--muted); margin: 0 0 18px;
+    }
+    .field-label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--text); margin: 12px 0 6px; text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .divider {
+      height: 1px; background: var(--border); margin: 18px 0;
+    }
+
+    /* APP SHELL */
     .app-shell {
+      display: none;
       max-width: 540px;
       margin: 0 auto;
-      padding: 16px 14px 88px;
+      padding: 16px 14px 92px;
     }
+    .app-shell.visible { display: block; }
 
     /* Top bar */
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 16px; padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 2px solid var(--border);
     }
-    .brand { font-weight: 700; letter-spacing: 0.04em; font-size: 14px; text-transform: uppercase; }
-    .brand span { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 12px; }
+    .brand { font-weight: 800; letter-spacing: 0.03em; font-size: 15px; text-transform: uppercase; color: var(--text); }
+    .brand span { color: var(--muted); font-weight: 600; margin-left: 6px; font-size: 12px; }
     .sync-pill {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
-      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+      padding: 5px 10px; border-radius: 999px;
       border: 1px solid var(--border); background: var(--surface);
-      color: var(--muted); text-transform: uppercase;
+      color: var(--text); text-transform: uppercase;
     }
-    .sync-pill.ok { color: var(--ok); border-color: rgba(34,197,94,0.4); }
-    .sync-pill.warn { color: var(--warn); border-color: rgba(245,158,11,0.4); }
+    .sync-pill.ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok-border); }
+    .sync-pill.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-border); }
 
     /* Views */
     .view { display: none; }
@@ -65,9 +126,9 @@
     }
     .date-btn {
       background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
-      border-radius: 10px; padding: 6px 12px; font-weight: 600; cursor: pointer;
+      border-radius: 8px; padding: 7px 12px; font-weight: 700; font-size: 13px; cursor: pointer;
     }
-    .date-label { font-weight: 700; font-size: 14px; letter-spacing: 0.02em; }
+    .date-label { font-weight: 800; font-size: 15px; color: var(--text); }
 
     /* Cards */
     .card {
@@ -79,16 +140,16 @@
       margin-bottom: 10px;
     }
     .card-title {
-      font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
       text-transform: uppercase; color: var(--muted);
     }
-    .card-value { font-size: 20px; font-weight: 700; }
-    .card-sub { font-size: 12px; color: var(--muted); margin-left: 4px; font-weight: 500; }
+    .card-value { font-size: 22px; font-weight: 800; color: var(--text); }
+    .card-sub { font-size: 13px; color: var(--muted); margin-left: 4px; font-weight: 600; }
 
     /* Dynamic ruler */
     .ruler-track {
-      height: 8px; background: var(--surface-2); border-radius: 999px;
-      overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border);
+      height: 10px; background: var(--surface-2); border-radius: 999px;
+      overflow: hidden; margin-bottom: 10px; border: 1px solid var(--border);
     }
     .ruler-fill {
       height: 100%; background: var(--accent); width: 0%;
@@ -96,42 +157,44 @@
     }
     .ruler-meta {
       display: flex; justify-content: space-between;
-      font-size: 11px; color: var(--muted); margin: -6px 0 10px;
+      font-size: 12px; font-weight: 600; color: var(--muted); margin: -4px 0 10px;
     }
 
     /* Controls */
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
-      flex: 1; min-width: 70px;
+      flex: 1; min-width: 72px;
       background: var(--surface-2); color: var(--text);
       border: 1px solid var(--border); border-radius: 10px;
-      padding: 10px 12px; font-weight: 600; font-size: 13px;
+      padding: 11px 12px; font-weight: 700; font-size: 13px;
       cursor: pointer; text-align: center;
     }
-    .btn:active { opacity: 0.8; }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn.danger { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.45); color: #fca5a5; }
-    .btn.sm { padding: 7px 10px; font-size: 12px; flex: 0 0 auto; }
+    .btn:active { opacity: 0.85; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .btn.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger); }
+    .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .btn.sm { padding: 9px 12px; font-size: 12px; flex: 0 0 auto; }
 
     .input-row { display: flex; gap: 8px; margin-top: 8px; }
-    input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
       width: 100%; background: var(--bg); color: var(--text);
-      border: 1px solid var(--border); border-radius: 10px;
-      padding: 10px 12px; font-size: 14px; outline: none;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 11px 12px; font-size: 14px; font-weight: 500; outline: none;
     }
-    input:focus, select:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); opacity: 0.8; }
+    input:focus { border-color: var(--accent); }
 
     /* Meal list */
     .meal-list { list-style: none; padding: 0; margin: 10px 0 0; }
     .meal-item {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 9px 0; border-top: 1px solid var(--border); font-size: 13px;
+      padding: 10px 0; border-top: 1px solid var(--border); font-size: 14px;
     }
-    .meal-item small { color: var(--muted); display: block; font-size: 11px; }
+    .meal-item small { color: var(--muted); display: block; font-size: 12px; font-weight: 600; }
 
     /* Mobile Settings UI */
     .settings-group-title {
-      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
       text-transform: uppercase; color: var(--muted);
       margin: 18px 4px 8px;
     }
@@ -141,31 +204,30 @@
     }
     .settings-row {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 13px 14px; border-bottom: 1px solid var(--border);
+      padding: 14px; border-bottom: 1px solid var(--border);
     }
     .settings-row:last-child { border-bottom: none; }
     .settings-row.col { flex-direction: column; align-items: stretch; }
-    .settings-label { font-weight: 600; font-size: 14px; }
+    .settings-label { font-weight: 700; font-size: 14px; color: var(--text); }
     .settings-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
     /* Segmented control */
     .segmented {
       display: flex; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 10px; padding: 3px; width: 100%;
+      border-radius: 10px; padding: 3px; width: 100%; margin-top: 6px;
     }
     .segmented button {
       flex: 1; background: transparent; color: var(--muted);
-      border: none; border-radius: 8px; padding: 8px 10px;
-      font-size: 12px; font-weight: 600; cursor: pointer;
+      border: none; border-radius: 8px; padding: 9px 8px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
     }
     .segmented button.active {
-      background: var(--surface-2); color: var(--text);
-      border: 1px solid var(--border);
+      background: var(--accent); color: var(--accent-text);
     }
 
     /* Switch */
     .switch {
-      position: relative; display: inline-block; width: 44px; height: 24px; flex: 0 0 auto;
+      position: relative; display: inline-block; width: 46px; height: 26px; flex: 0 0 auto;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
@@ -174,8 +236,9 @@
       transition: .2s; border-radius: 999px;
     }
     .slider:before {
-      position: absolute; content: ""; height: 18px; width: 18px;
-      left: 2px; bottom: 2px; background: var(--text);
+      position: absolute; content: ""; height: 20px; width: 20px;
+      left: 2px; bottom: 2px; background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
       transition: .2s; border-radius: 50%;
     }
     .switch input:checked + .slider { background: var(--accent); border-color: var(--accent); }
@@ -183,30 +246,58 @@
 
     /* Bottom nav */
     .bottom-nav {
+      display: none;
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(11, 13, 16, 0.96); backdrop-filter: blur(8px);
-      border-top: 1px solid var(--border);
-      display: flex; justify-content: center;
+      background: var(--surface);
+      border-top: 1.5px solid var(--border);
+      justify-content: center;
     }
+    .bottom-nav.visible { display: flex; }
     .bottom-nav-inner {
       width: 100%; max-width: 540px; display: flex;
     }
     .nav-btn {
       flex: 1; background: transparent; border: none; color: var(--muted);
-      padding: 14px 8px; font-size: 12px; font-weight: 700;
+      padding: 15px 8px; font-size: 13px; font-weight: 800;
       letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
     }
-    .nav-btn.active { color: var(--text); border-top: 2px solid var(--accent); }
+    .nav-btn.active { color: var(--accent); border-top: 3px solid var(--accent); }
 
     .status-msg {
-      font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px;
+      font-size: 13px; font-weight: 600; color: var(--muted); margin-top: 10px; min-height: 18px;
     }
     .status-msg.ok { color: var(--ok); }
     .status-msg.err { color: var(--danger); }
   </style>
 </head>
 <body>
-  <div class="app-shell">
+
+  <!-- TELA DE LOGIN (ENTRADA) -->
+  <section id="authGate" class="auth-gate">
+    <div class="auth-card">
+      <h1 class="auth-title">Autopilot Loop OS</h1>
+      <p class="auth-sub">Entre com seu e-mail e senha para sincronizar seus dados na nuvem.</p>
+
+      <label class="field-label" for="gateEmail">E-mail</label>
+      <input type="email" id="gateEmail" placeholder="seu@email.com" autocomplete="email" />
+
+      <label class="field-label" for="gatePass">Senha</label>
+      <input type="password" id="gatePass" placeholder="Mínimo 6 caracteres" autocomplete="current-password" />
+
+      <div class="btn-row" style="margin-top: 16px;">
+        <button class="btn primary" id="gateSignIn">Entrar</button>
+        <button class="btn" id="gateSignUp">Criar Conta</button>
+      </div>
+
+      <div id="gateMsg" class="status-msg"></div>
+
+      <div class="divider"></div>
+      <button class="btn ghost" id="gateOffline" style="width: 100%;">Continuar só no dispositivo (Offline)</button>
+    </div>
+  </section>
+
+  <!-- APP PRINCIPAL -->
+  <div id="appShell" class="app-shell">
     <header class="topbar">
       <div class="brand">Autopilot Loop OS <span>v9</span></div>
       <div id="syncPill" class="sync-pill">LOCAL</div>
@@ -220,7 +311,7 @@
         <button class="date-btn" id="btnNextDay">Seguinte</button>
       </div>
 
-      <!-- Hidratação (Régua Dinâmica) -->
+      <!-- Hidratação -->
       <section class="card">
         <div class="card-head">
           <div class="card-title">Hidratação</div>
@@ -235,7 +326,7 @@
         </div>
       </section>
 
-      <!-- Peso (Régua Dinâmica) -->
+      <!-- Peso -->
       <section class="card">
         <div class="card-head">
           <div class="card-title">Peso Corporal</div>
@@ -245,11 +336,11 @@
         <div class="ruler-meta"><span id="weightMinLabel">Min</span><span id="weightMaxLabel">Max</span></div>
         <div class="input-row">
           <input type="number" id="weightInput" step="0.1" placeholder="Ex.: 84.5" />
-          <button class="btn primary sm" id="btnSaveWeight">Guardar</button>
+          <button class="btn primary sm" id="btnSaveWeight">Salvar</button>
         </div>
       </section>
 
-      <!-- Passos (Régua Dinâmica) -->
+      <!-- Passos -->
       <section class="card">
         <div class="card-head">
           <div class="card-title">Passos</div>
@@ -258,16 +349,16 @@
         <div class="ruler-track"><div class="ruler-fill" id="stepsBar"></div></div>
         <div class="ruler-meta"><span>0</span><span id="stepsCapLabel">Escala: 10000</span></div>
         <div class="input-row">
-          <input type="number" id="stepsInput" step="100" placeholder="Adicionar ou definir passos" />
+          <input type="number" id="stepsInput" step="100" placeholder="Adicionar ou definir" />
           <button class="btn primary sm" id="btnAddSteps">+ Somar</button>
           <button class="btn sm" id="btnSetSteps">Definir</button>
         </div>
       </section>
 
-      <!-- Refeições / Calorias -->
+      <!-- Refeições -->
       <section class="card">
         <div class="card-head">
-          <div class="card-title">Registo Alimentar</div>
+          <div class="card-title">Registro Alimentar</div>
           <div><span class="card-value" id="kcalVal">0</span><span class="card-sub">kcal</span></div>
         </div>
         <div class="input-row">
@@ -279,44 +370,59 @@
       </section>
     </main>
 
-    <!-- VIEW: CONFIGURAÇÕES (Estilo Definições de Telemóvel) -->
+    <!-- VIEW: CONFIGURAÇÕES -->
     <main id="view-config" class="view">
+      <div class="settings-group-title">Aparência</div>
+      <div class="settings-group">
+        <div class="settings-row col">
+          <div>
+            <div class="settings-label">Tema do Aplicativo</div>
+            <div class="settings-desc">Escolha entre Claro, Escuro ou acompanhar o sistema do aparelho.</div>
+          </div>
+          <div class="segmented" id="themeSegment">
+            <button type="button" data-theme="light">Claro</button>
+            <button type="button" data-theme="dark">Escuro</button>
+            <button type="button" data-theme="system">Sistema</button>
+          </div>
+        </div>
+      </div>
+
       <div class="settings-group-title">Conta &amp; Modo de Operação</div>
       <div class="settings-group">
         <div class="settings-row col">
           <div>
             <div class="settings-label">Armazenamento</div>
-            <div class="settings-desc">Escolha entre manter os dados apenas neste dispositivo ou sincronizar na nuvem.</div>
+            <div class="settings-desc">Alterne entre manter os dados apenas neste aparelho ou sincronizar na nuvem.</div>
           </div>
           <div class="segmented" id="modeSegment">
-            <button type="button" data-mode="local" class="active">Só no Dispositivo</button>
+            <button type="button" data-mode="local">Só no Dispositivo</button>
             <button type="button" data-mode="cloud">Integrado (Nuvem)</button>
           </div>
         </div>
 
-        <div class="settings-row col" id="cloudAuthBox" style="display:none;">
-          <div id="authLoggedOut">
-            <div class="settings-label">Sessão Firebase</div>
-            <div class="settings-desc">Acesso isolado por utilizador (e-mail e palavra-passe).</div>
-            <div class="input-row" style="flex-direction:column;">
-              <input type="email" id="authEmail" placeholder="E-mail" autocomplete="email" />
-              <input type="password" id="authPass" placeholder="Palavra-passe (mín. 6 caracteres)" autocomplete="current-password" />
-            </div>
-            <div class="btn-row" style="margin-top:10px;">
-              <button class="btn primary" id="btnSignIn">Entrar</button>
-              <button class="btn" id="btnSignUp">Criar Conta</button>
-            </div>
+        <!-- Formulário inline de Login quando desconectado -->
+        <div class="settings-row col" id="settingsAuthOut">
+          <div class="settings-label">Entrar ou Criar Conta (Firebase)</div>
+          <div class="settings-desc">Seus dados ficam isolados e sincronizados na sua conta.</div>
+          <div class="input-row" style="flex-direction: column;">
+            <input type="email" id="cfgEmail" placeholder="E-mail" autocomplete="email" />
+            <input type="password" id="cfgPass" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password" />
           </div>
+          <div class="btn-row" style="margin-top: 10px;">
+            <button class="btn primary" id="cfgSignIn">Entrar</button>
+            <button class="btn" id="cfgSignUp">Criar Conta</button>
+          </div>
+          <div id="cfgAuthMsg" class="status-msg"></div>
+        </div>
 
-          <div id="authLoggedIn" style="display:none;">
-            <div class="settings-label">Conta Ligada</div>
-            <div class="settings-desc" id="authUserEmail">--</div>
-            <div class="btn-row" style="margin-top:10px;">
-              <button class="btn primary" id="btnSyncNow">Sincronizar Agora</button>
-              <button class="btn" id="btnSignOut">Terminar Sessão</button>
-            </div>
+        <!-- Status quando conectado -->
+        <div class="settings-row col" id="settingsAuthIn" style="display: none;">
+          <div class="settings-label">Conta Conectada</div>
+          <div class="settings-desc" id="authUserEmail">--</div>
+          <div class="btn-row" style="margin-top: 8px;">
+            <button class="btn primary" id="btnSyncNow">Sincronizar Agora</button>
+            <button class="btn" id="btnSignOut">Sair da Conta</button>
           </div>
-          <div id="authMsg" class="status-msg"></div>
         </div>
       </div>
 
@@ -325,17 +431,17 @@
         <div class="settings-row col">
           <div>
             <div class="settings-label">Considerar Online em</div>
-            <div class="settings-desc">Controla quando o envio automático para a nuvem é permitido.</div>
+            <div class="settings-desc">Define quando o envio automático para a nuvem é permitido.</div>
           </div>
           <div class="segmented" id="netPolicySegment">
             <button type="button" data-net="wifi">Somente Wi-Fi</button>
-            <button type="button" data-net="any" class="active">Wi-Fi e Dados Móveis</button>
+            <button type="button" data-net="any">Wi-Fi e Dados Móveis</button>
           </div>
         </div>
         <div class="settings-row">
           <div>
             <div class="settings-label">Pausar Envio em Dados Móveis</div>
-            <div class="settings-desc">Interruptor manual para navegadores que não expõem o tipo de ligação.</div>
+            <div class="settings-desc">Interruptor manual para navegadores que não informam o tipo de rede.</div>
           </div>
           <label class="switch">
             <input type="checkbox" id="manualPauseToggle" />
@@ -348,8 +454,8 @@
       <div class="settings-group">
         <div class="settings-row">
           <div>
-            <div class="settings-label">Exportar Folha (.CSV)</div>
-            <div class="settings-desc">Registo diário compatível com Excel e Google Sheets.</div>
+            <div class="settings-label">Exportar Planilha (.CSV)</div>
+            <div class="settings-desc">Compatível com Excel e Google Sheets.</div>
           </div>
           <button class="btn sm" id="btnExpCsv">CSV</button>
         </div>
@@ -363,14 +469,14 @@
         <div class="settings-row">
           <div>
             <div class="settings-label">Cópia Completa (.JSON)</div>
-            <div class="settings-desc">Guarda todos os dias, refeições e definições.</div>
+            <div class="settings-desc">Salva todos os dias, refeições e configurações.</div>
           </div>
           <button class="btn sm" id="btnExpJson">JSON</button>
         </div>
         <div class="settings-row">
           <div>
             <div class="settings-label">Restaurar Cópia (.JSON)</div>
-            <div class="settings-desc">Importa um ficheiro de backup anterior.</div>
+            <div class="settings-desc">Importa um arquivo de backup anterior.</div>
           </div>
           <button class="btn sm" id="btnImpJson">Importar</button>
           <input type="file" id="fileImpJson" accept=".json,application/json" style="display:none;" />
@@ -382,10 +488,10 @@
         <div class="settings-row col">
           <div>
             <div class="settings-label">Apagar Todos os Dados Locais</div>
-            <div class="settings-desc">Escreva <strong>ZERAR</strong> abaixo para confirmar a eliminação irreversível dos dados neste dispositivo.</div>
+            <div class="settings-desc">Digite <strong>ZERAR</strong> abaixo para confirmar a exclusão irreversível neste aparelho.</div>
           </div>
           <div class="input-row">
-            <input type="text" id="resetConfirmInput" placeholder="Escreva ZERAR" />
+            <input type="text" id="resetConfirmInput" placeholder="Digite ZERAR" />
             <button class="btn danger sm" id="btnResetAll">Apagar</button>
           </div>
           <div id="resetMsg" class="status-msg"></div>
@@ -394,7 +500,7 @@
     </main>
   </div>
 
-  <nav class="bottom-nav">
+  <nav id="bottomNav" class="bottom-nav">
     <div class="bottom-nav-inner">
       <button class="nav-btn active" data-view="hoje">Hoje</button>
       <button class="nav-btn" data-view="config">Configurações</button>
@@ -417,7 +523,6 @@
       setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Firebase Config embutido (projeto autopilot-loop-os)
     const firebaseConfig = {
       apiKey: "AIzaSyCNhXTqtx5i-JdzMI-A2x0Jh5J4hnuHD-Y",
       authDomain: "autopilot-loop-os.firebaseapp.com",
@@ -432,8 +537,9 @@
     const auth = getAuth(fbApp);
     const db = getFirestore(fbApp);
 
-    const STORAGE_KEY = "autopilot_loop_os_v9";
+    const STORAGE_KEY = "autopilot_loop_os_v9_2";
     let currentUser = null;
+    let offlineBypass = false;
     let currentDate = toDateKey(new Date());
 
     function toDateKey(d) {
@@ -447,7 +553,8 @@
       return {
         updatedAt: Date.now(),
         settings: {
-          mode: "local",       // "local" | "cloud"
+          theme: "light",      // "light" | "dark" | "system"
+          mode: "cloud",       // "cloud" | "local"
           netPolicy: "any",    // "wifi" | "any"
           manualPause: false
         },
@@ -473,11 +580,31 @@
 
     let state = loadState();
 
+    // Theme engine
+    const mediaDark = window.matchMedia("(prefers-color-scheme: dark)");
+    function applyTheme() {
+      const pref = state.settings.theme || "light";
+      const resolved = pref === "system" ? (mediaDark.matches ? "dark" : "light") : pref;
+      document.documentElement.setAttribute("data-theme", resolved);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", resolved === "dark" ? "#090d14" : "#ffffff");
+    }
+    mediaDark.addEventListener("change", () => {
+      if (state.settings.theme === "system") applyTheme();
+    });
+    applyTheme();
+
     function getDay(key) {
       if (!state.days[key]) {
         state.days[key] = { water: 0, weight: null, steps: 0, meals: [] };
       }
       return state.days[key];
+    }
+
+    function showGate(show) {
+      document.getElementById("authGate").style.display = show ? "flex" : "none";
+      document.getElementById("appShell").classList.toggle("visible", !show);
+      document.getElementById("bottomNav").classList.toggle("visible", !show);
     }
 
     function canSyncByNetwork() {
@@ -501,6 +628,7 @@
     async function saveState(triggerCloud = true) {
       state.updatedAt = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      applyTheme();
       renderAll();
 
       if (!triggerCloud || state.settings.mode !== "cloud" || !currentUser) {
@@ -514,7 +642,7 @@
       }
 
       try {
-        updateSyncPill("A SINCRONIZAR...");
+        updateSyncPill("SINCRONIZANDO...");
         await setDoc(doc(db, "users", currentUser.uid, "app", "state"), state);
         updateSyncPill("NUVEM OK", "ok");
       } catch (err) {
@@ -530,7 +658,7 @@
         return;
       }
       try {
-        updateSyncPill("A CARREGAR...");
+        updateSyncPill("CARREGANDO...");
         const ref = doc(db, "users", currentUser.uid, "app", "state");
         const snap = await getDoc(ref);
         if (snap.exists()) {
@@ -543,6 +671,7 @@
               days: remote.days || {}
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            applyTheme();
             renderAll();
           } else {
             await setDoc(ref, state);
@@ -557,7 +686,6 @@
       }
     }
 
-    // Dynamic rulers (expand automatically without fixed ceiling)
     function renderAll() {
       const day = getDay(currentDate);
       document.getElementById("currentDateLabel").textContent = currentDate;
@@ -569,7 +697,7 @@
       document.getElementById("waterBar").style.width = `${Math.min(100, (water / waterCap) * 100)}%`;
       document.getElementById("waterCapLabel").textContent = `Escala: ${waterCap} ml`;
 
-      // Weight (dynamic min/max based on recorded history)
+      // Weight
       const weights = Object.values(state.days).map(d => Number(d.weight)).filter(v => !isNaN(v) && v > 0);
       const wVal = day.weight !== null && day.weight !== "" ? Number(day.weight) : null;
       document.getElementById("weightVal").textContent = wVal !== null ? wVal.toFixed(1) : "--";
@@ -614,21 +742,66 @@
         ul.appendChild(li);
       });
 
-      // Settings UI sync
+      // Settings UI
+      document.querySelectorAll("#themeSegment button").forEach(b => {
+        b.classList.toggle("active", b.dataset.theme === (state.settings.theme || "light"));
+      });
       document.querySelectorAll("#modeSegment button").forEach(b => {
         b.classList.toggle("active", b.dataset.mode === state.settings.mode);
       });
-      document.getElementById("cloudAuthBox").style.display = state.settings.mode === "cloud" ? "flex" : "none";
-
       document.querySelectorAll("#netPolicySegment button").forEach(b => {
         b.classList.toggle("active", b.dataset.net === state.settings.netPolicy);
       });
       document.getElementById("manualPauseToggle").checked = !!state.settings.manualPause;
+
+      document.getElementById("settingsAuthOut").style.display = currentUser ? "none" : "flex";
+      document.getElementById("settingsAuthIn").style.display = currentUser ? "flex" : "none";
+      document.getElementById("authUserEmail").textContent = currentUser ? currentUser.email : "--";
     }
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, s => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[s]));
     }
+
+    // Auth helper
+    async function handleAuth(type, emailEl, passEl, msgEl) {
+      const email = emailEl.value.trim();
+      const pass = passEl.value;
+      const setMsg = (t, c = "") => { msgEl.textContent = t; msgEl.className = "status-msg " + c; };
+
+      if (!email || pass.length < 6) {
+        return setMsg("Informe um e-mail válido e senha com 6+ caracteres.", "err");
+      }
+      try {
+        setMsg(type === "in" ? "Entrando..." : "Criando conta...");
+        state.settings.mode = "cloud";
+        if (type === "in") {
+          await signInWithEmailAndPassword(auth, email, pass);
+        } else {
+          await createUserWithEmailAndPassword(auth, email, pass);
+        }
+        setMsg("Conectado.", "ok");
+      } catch (e) {
+        setMsg("Erro: " + e.code, "err");
+      }
+    }
+
+    document.getElementById("gateSignIn").onclick = () =>
+      handleAuth("in", document.getElementById("gateEmail"), document.getElementById("gatePass"), document.getElementById("gateMsg"));
+    document.getElementById("gateSignUp").onclick = () =>
+      handleAuth("up", document.getElementById("gateEmail"), document.getElementById("gatePass"), document.getElementById("gateMsg"));
+
+    document.getElementById("cfgSignIn").onclick = () =>
+      handleAuth("in", document.getElementById("cfgEmail"), document.getElementById("cfgPass"), document.getElementById("cfgAuthMsg"));
+    document.getElementById("cfgSignUp").onclick = () =>
+      handleAuth("up", document.getElementById("cfgEmail"), document.getElementById("cfgPass"), document.getElementById("cfgAuthMsg"));
+
+    document.getElementById("gateOffline").onclick = () => {
+      offlineBypass = true;
+      state.settings.mode = "local";
+      saveState(false);
+      showGate(false);
+    };
 
     // Navigation
     document.querySelectorAll(".nav-btn").forEach(btn => {
@@ -643,8 +816,7 @@
     // Date controls
     function shiftDate(delta) {
       const [y, m, d] = currentDate.split("-").map(Number);
-      const dt = new Date(y, m - 1, d + delta);
-      currentDate = toDateKey(dt);
+      currentDate = toDateKey(new Date(y, m - 1, d + delta));
       renderAll();
     }
     document.getElementById("btnPrevDay").onclick = () => shiftDate(-1);
@@ -695,6 +867,13 @@
     };
 
     // Settings controls
+    document.querySelectorAll("#themeSegment button").forEach(btn => {
+      btn.onclick = () => {
+        state.settings.theme = btn.dataset.theme;
+        saveState(true);
+      };
+    });
+
     document.querySelectorAll("#modeSegment button").forEach(btn => {
       btn.onclick = () => {
         state.settings.mode = btn.dataset.mode;
@@ -715,55 +894,29 @@
       saveState(true);
     };
 
-    // Auth handlers
-    const authMsg = document.getElementById("authMsg");
-    function setAuthMsg(text, cls = "") {
-      authMsg.textContent = text;
-      authMsg.className = "status-msg " + cls;
-    }
-
-    document.getElementById("btnSignIn").onclick = async () => {
-      const email = document.getElementById("authEmail").value.trim();
-      const pass = document.getElementById("authPass").value;
-      if (!email || !pass) return setAuthMsg("Preencha e-mail e palavra-passe.", "err");
-      try {
-        setAuthMsg("A autenticar...");
-        await signInWithEmailAndPassword(auth, email, pass);
-        setAuthMsg("Sessão iniciada.", "ok");
-      } catch (e) {
-        setAuthMsg("Erro ao entrar: " + e.code, "err");
-      }
-    };
-
-    document.getElementById("btnSignUp").onclick = async () => {
-      const email = document.getElementById("authEmail").value.trim();
-      const pass = document.getElementById("authPass").value;
-      if (!email || pass.length < 6) return setAuthMsg("Use um e-mail válido e palavra-passe com 6+ caracteres.", "err");
-      try {
-        setAuthMsg("A criar conta...");
-        await createUserWithEmailAndPassword(auth, email, pass);
-        setAuthMsg("Conta criada e ligada.", "ok");
-      } catch (e) {
-        setAuthMsg("Erro ao criar conta: " + e.code, "err");
-      }
-    };
+    document.getElementById("btnSyncNow").onclick = () => pullFromCloud();
 
     document.getElementById("btnSignOut").onclick = async () => {
       await signOut(auth);
-      setAuthMsg("Sessão terminada.");
+      offlineBypass = false;
+      state.settings.mode = "cloud";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      showGate(true);
     };
-
-    document.getElementById("btnSyncNow").onclick = () => pullFromCloud();
 
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
-      document.getElementById("authLoggedOut").style.display = user ? "none" : "block";
-      document.getElementById("authLoggedIn").style.display = user ? "block" : "none";
-      document.getElementById("authUserEmail").textContent = user ? user.email : "--";
-      if (user && state.settings.mode === "cloud") {
+      if (user) {
+        state.settings.mode = "cloud";
+        showGate(false);
+        renderAll();
         pullFromCloud();
+      } else if (offlineBypass) {
+        showGate(false);
+        updateSyncPill("LOCAL");
+        renderAll();
       } else {
-        updateSyncPill(state.settings.mode === "cloud" ? "SEM SESSÃO" : "LOCAL");
+        showGate(true);
       }
     });
 
@@ -794,8 +947,7 @@
 
     document.getElementById("btnExpCsv").onclick = () => {
       const rows = [["Data", "Agua_ml", "Peso_kg", "Passos", "Calorias_kcal"], ...buildRows()];
-      const csv = rows.map(r => r.join(",")).join("\n");
-      downloadFile(csv, `autopilot-v9-${currentDate}.csv`, "text/csv;charset=utf-8;");
+      downloadFile(rows.map(r => r.join(",")).join("\n"), `autopilot-v9-${currentDate}.csv`, "text/csv;charset=utf-8;");
     };
 
     document.getElementById("btnExpXls").onclick = () => {
@@ -820,7 +972,7 @@
           state = { ...defaultState(), ...imported, settings: { ...defaultState().settings, ...(imported.settings || {}) } };
           saveState(true);
         } catch {
-          alert("Ficheiro JSON inválido.");
+          alert("Arquivo JSON inválido.");
         }
       };
       reader.readAsText(file);
@@ -831,14 +983,14 @@
       const val = document.getElementById("resetConfirmInput").value.trim();
       const msg = document.getElementById("resetMsg");
       if (val !== "ZERAR") {
-        msg.textContent = "Escreva exatamente ZERAR para confirmar.";
+        msg.textContent = "Digite exatamente ZERAR para confirmar.";
         msg.className = "status-msg err";
         return;
       }
       localStorage.removeItem(STORAGE_KEY);
       state = defaultState();
       document.getElementById("resetConfirmInput").value = "";
-      msg.textContent = "Dados locais eliminados.";
+      msg.textContent = "Dados locais apagados.";
       msg.className = "status-msg ok";
       renderAll();
     };
