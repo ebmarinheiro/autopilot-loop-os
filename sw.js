@@ -1,44 +1,34 @@
-const CACHE_NAME = 'autopilot-loop-os-v6';
-const CORE_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.svg'
-];
+const CACHE_NAME = 'autopilot-loop-os-v-auto';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
-  );
+  // Ativa a nova versão imediatamente, sem ficar em espera
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  // Limpa caches antigos e assume o controle das abas abertas na hora
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignora requisições que não sejam GET (ex: escritas no Firebase)
   if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url);
-  if (url.hostname.includes('firestore.googleapis.com') || url.hostname.includes('identitytoolkit.googleapis.com')) {
-    return;
-  }
 
+  // Estratégia Network-First: tenta a rede primeiro; só usa cache se estiver offline
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        if (response && (response.status === 200 || response.type === 'opaque')) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
-        return response;
+        return networkResponse;
       })
       .catch(() => caches.match(event.request))
   );
